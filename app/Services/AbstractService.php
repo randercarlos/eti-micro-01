@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
@@ -11,11 +10,11 @@ abstract class AbstractService
 {
     protected $model;
 
-    public function loadAll() {
+    public function loadAll($recordsPerPage = false) {
         $class = get_class($this->model);
         $obj = new $class;
 
-        return $obj->get();
+        return $recordsPerPage ? $obj->paginate($recordsPerPage) : $obj->get();
     }
 
     public function loadByName(string $name = null, bool $like = false): ?Collection {
@@ -40,28 +39,28 @@ abstract class AbstractService
     }
 
     public function find(int $id): Model {
+        $class = get_class($this->model);
+
         if (!$record = $this->model->find($id)) {
-            throw new ModelNotFoundException(get_class($this->model) . " with id $id doesn't exists!" );
+            throw new ModelNotFoundException("{$class} with id $id was not found!");
         }
 
         return $record;
     }
 
-    public function save(Request $request, Model $model = null) {
+    public function save(array $data, Model $model = null): Model {
 
         $class = get_class($this->model);
 
         if (!is_null($model) && !empty($model->id)) {
 
-            if (!$model->update($request->all())) {
-                throw new \Exception("Fail on update " . $class .
-                    " with values: " . collect($request->all())->toJson());
+            if (!$model->update($data)) {
+                throw new \Exception("Fail on update {$class} with values: " . implode(', ', $data));
             }
 
         } else {
-            if (!$model = $class::create($request->all())) {
-                throw new \Exception("Fail on create " . $class . " with values: "
-                    . collect($request->all())->toJson());
+            if (!$model = $class::create($data)) {
+                throw new \Exception("Fail on create {$class} with values: " . implode(', ', $data));
             }
 
         }
@@ -69,13 +68,20 @@ abstract class AbstractService
         return $model;
     }
 
-    public function delete(Model $model): Model {
-        $class = get_class($model);
-
-        if (!$model->delete()) {
-            throw new \Exception('Fail on delete ' . $class . " with id {$model->id}" );
+    public function delete($model): Model {
+        $class = get_class($this->model);
+        if (is_integer($model)) {
+            $model = $this->find($model);
         }
 
-        return $this->model;
+        if (!($model instanceof Model)) {
+            throw new \Exception("Only models can be deleted.");
+        }
+
+        if (!$model->delete()) {
+            throw new \Exception("Fail on delete {$class} with id {$model->id}");
+        }
+
+        return $model;
     }
 }

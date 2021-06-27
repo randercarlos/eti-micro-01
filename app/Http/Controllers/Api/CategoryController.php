@@ -7,7 +7,6 @@ use App\Http\Requests\CategoryFormRequest;
 use App\Http\Resources\CategoryResource;
 use App\Models\Category;
 use App\Services\CategoryService;
-use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class CategoryController extends Controller
@@ -37,7 +36,7 @@ class CategoryController extends Controller
      */
     public function store(CategoryFormRequest $request)
     {
-        $category = $this->categoryService->save($request);
+        $category = $this->categoryService->save($request->validated());
 
         return new CategoryResource($category);
     }
@@ -60,9 +59,9 @@ class CategoryController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Category $category)
+    public function update(CategoryFormRequest $request, Category $category)
     {
-        return new CategoryResource($this->categoryService->save($request, $category));
+        return new CategoryResource($this->categoryService->save($request->validated(), $category));
     }
 
     /**
