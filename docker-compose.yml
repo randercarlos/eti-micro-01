@@ -5,7 +5,7 @@ services:
     image: laravel-app
     build:
       args:
-        user: eti-micro
+        user: eti-micro-01
         uid: 1000
       context: .
       dockerfile: Dockerfile

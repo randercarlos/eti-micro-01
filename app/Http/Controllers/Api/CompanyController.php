@@ -7,16 +7,19 @@ use App\Http\Requests\CompanyFormRequest;
 use App\Http\Resources\CompanyResource;
 use App\Models\Company;
 use App\Services\CompanyService;
+use App\Services\EvaluationService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class CompanyController extends Controller
 {
     protected $companyService;
+    protected $evaluationService;
 
-    public function __construct(CompanyService $companyService)
+    public function __construct(CompanyService $companyService, EvaluationService $evaluationService)
     {
         $this->companyService = $companyService;
+        $this->evaluationService = $evaluationService;
     }
 
     /**
@@ -50,7 +53,11 @@ class CompanyController extends Controller
      */
     public function show(Company $company)
     {
-        return new CompanyResource($company);
+        $evaluations = json_decode($this->evaluationService->getEvaluationsCompany($company->id))->data;
+
+        return (new CompanyResource($company))->additional([
+            'data' => ['evaluations' => $evaluations]
+        ]);
     }
 
     /**
